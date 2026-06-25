@@ -5,6 +5,15 @@ import { Upload, MapPin, Send } from 'lucide-react'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import toast from 'react-hot-toast'
 
+const CATEGORIES = [
+  'Pothole / Road Damage', 'Broken Streetlight', 'Garbage / Waste',
+  'Water Leakage / Waterlogging', 'Sewage / Blocked Drain',
+  'Damaged Footpath', 'Illegal Dumping', 'Broken Traffic Signal',
+  'Damaged Public Property', 'Open Manhole', 'Electrical Wire Hazard', 'Other'
+]
+
+const SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+
 function LocationPicker({ onSelect }: { onSelect: (lat: string, lon: string) => void }) {
   useMapEvents({
     click(e) {
@@ -22,7 +31,8 @@ export default function ReportIssue() {
   const [showMap, setShowMap]  = useState(false)
   const [markerPos, setMarkerPos] = useState<[number, number] | null>(null)
   const [form, setForm] = useState({
-    description: '', location: '', lat: '', lon: '', ward: ''
+    description: '', location: '', lat: '', lon: '', ward: '',
+    category: '', severity: 'MEDIUM'
   })
   const [image, setImage] = useState<File | null>(null)
 
@@ -71,6 +81,8 @@ export default function ReportIssue() {
       fd.append('lat',         form.lat)
       fd.append('lon',         form.lon)
       fd.append('ward',        form.ward)
+      fd.append('category',    form.category)
+      fd.append('severity',    form.severity)
       if (image) fd.append('image', image)
 
       const res = await issuesApi.submit(fd)
@@ -87,7 +99,7 @@ export default function ReportIssue() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-slate-100">📸 Report an Issue</h1>
-        <p className="text-slate-400 mt-1">AI will automatically analyse and categorise your report</p>
+        <p className="text-slate-400 mt-1">Fill in the details below to report a civic issue</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -112,6 +124,36 @@ export default function ReportIssue() {
             )}
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
+        </div>
+
+        {/* Category + Severity */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Category *</label>
+            <select
+              className="input"
+              value={form.category}
+              onChange={e => setForm({ ...form, category: e.target.value })}
+              required
+            >
+              <option value="">Select category</option>
+              {CATEGORIES.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Severity *</label>
+            <select
+              className="input"
+              value={form.severity}
+              onChange={e => setForm({ ...form, severity: e.target.value })}
+            >
+              {SEVERITIES.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Description */}
@@ -144,108 +186,51 @@ export default function ReportIssue() {
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-slate-300">📍 GPS Location</label>
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={getLocation}
-                className="btn-secondary flex items-center gap-2 text-sm py-1.5 px-3"
-              >
+              <button type="button" onClick={getLocation} className="btn-secondary flex items-center gap-2 text-sm py-1.5 px-3">
                 <MapPin className="w-4 h-4" /> Auto Detect
               </button>
-              <button
-                type="button"
-                onClick={() => setShowMap(!showMap)}
-                className="btn-secondary text-sm py-1.5 px-3"
-              >
+              <button type="button" onClick={() => setShowMap(!showMap)} className="btn-secondary text-sm py-1.5 px-3">
                 {showMap ? 'Hide Map' : '🗺️ Pick on Map'}
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <input
-              type="text"
-              className="input"
-              placeholder="Latitude"
-              value={form.lat}
-              onChange={e => {
-                setForm({ ...form, lat: e.target.value })
-                if (e.target.value && form.lon) {
-                  setMarkerPos([parseFloat(e.target.value), parseFloat(form.lon)])
-                }
-              }}
-            />
-            <input
-              type="text"
-              className="input"
-              placeholder="Longitude"
-              value={form.lon}
-              onChange={e => {
-                setForm({ ...form, lon: e.target.value })
-                if (form.lat && e.target.value) {
-                  setMarkerPos([parseFloat(form.lat), parseFloat(e.target.value)])
-                }
-              }}
-            />
+            <input type="text" className="input" placeholder="Latitude" value={form.lat}
+              onChange={e => { setForm({ ...form, lat: e.target.value }); if (e.target.value && form.lon) setMarkerPos([parseFloat(e.target.value), parseFloat(form.lon)]) }} />
+            <input type="text" className="input" placeholder="Longitude" value={form.lon}
+              onChange={e => { setForm({ ...form, lon: e.target.value }); if (form.lat && e.target.value) setMarkerPos([parseFloat(form.lat), parseFloat(e.target.value)]) }} />
           </div>
 
-          {/* Interactive Map */}
           {showMap && (
             <div className="rounded-xl overflow-hidden border border-slate-600" style={{ height: '300px' }}>
-              <MapContainer
-                center={markerPos || [24.5854, 73.7125]}
-                zoom={14}
-                style={{ height: '100%', width: '100%' }}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution="© OpenStreetMap"
-                />
+              <MapContainer center={markerPos || [24.5854, 73.7125]} zoom={14} style={{ height: '100%', width: '100%' }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="© OpenStreetMap" />
                 <LocationPicker onSelect={handleMapSelect} />
                 {markerPos && <Marker position={markerPos} />}
               </MapContainer>
             </div>
           )}
 
-          {form.lat && form.lon && (
-            <p className="text-xs text-green-400">
-              ✅ Location set: {form.lat}, {form.lon}
-            </p>
-          )}
-          {!form.lat && !form.lon && (
-            <p className="text-xs text-slate-500">
-              Auto Detect dabao ya map pe click karke exact location chuno
-            </p>
+          {form.lat && form.lon ? (
+            <p className="text-xs text-green-400">✅ Location set: {form.lat}, {form.lon}</p>
+          ) : (
+            <p className="text-xs text-slate-500">Auto Detect dabao ya map pe click karke exact location chuno</p>
           )}
         </div>
 
         {/* Ward */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">
-            Ward / Area <span className="text-slate-500">(optional)</span>
-          </label>
-          <input
-            type="text"
-            className="input"
-            placeholder="e.g. Ward 14, Hiran Magri"
-            value={form.ward}
-            onChange={e => setForm({ ...form, ward: e.target.value })}
-          />
+          <label className="block text-sm font-medium text-slate-300 mb-1.5">Ward / Area <span className="text-slate-500">(optional)</span></label>
+          <input type="text" className="input" placeholder="e.g. Ward 14, Hiran Magri" value={form.ward}
+            onChange={e => setForm({ ...form, ward: e.target.value })} />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn-primary w-full flex items-center justify-center gap-2 py-3 text-lg"
-        >
+        <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3 text-lg">
           {loading ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-              AI is analysing...
-            </>
+            <><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" /> Submitting...</>
           ) : (
-            <>
-              <Send className="w-5 h-5" /> Submit Report
-            </>
+            <><Send className="w-5 h-5" /> Submit Report</>
           )}
         </button>
       </form>
