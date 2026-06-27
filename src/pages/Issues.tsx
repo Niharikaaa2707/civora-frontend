@@ -214,38 +214,41 @@ export default function Issues() {
                     </div>
                   )}
 
-                  {/* Status Change + Delete */}
-                  {issue.reporter_id === user?.id && (
-                    <div className="mt-3 flex items-center gap-3 flex-wrap">
-                      {changingStatus === issue.id ? (
-                        <div className="flex flex-wrap gap-2">
-                          {STATUS_OPTIONS.map(s => (
-                            <button key={s} onClick={() => handleStatusChange(issue.id, s)}
-                              className="text-xs px-2 py-1 rounded font-medium transition-all"
-                              style={{
-                                background: issue.status === s ? '#f97316' : '#334155',
-                                color: 'white'
-                              }}>
-                              {s.replace('_', ' ')}
-                            </button>
-                          ))}
-                          <button onClick={() => setChangingStatus(null)} className="text-xs px-2 py-1 rounded text-slate-400" style={{ background: '#1e293b', border: '1px solid #334155' }}>
-                            Cancel
+                  {/* Status Change — sabko, Delete — sirf apni */}
+                  <div className="mt-3 flex items-center gap-3 flex-wrap">
+                    {changingStatus === issue.id ? (
+                      <div className="flex flex-wrap gap-2">
+                        {STATUS_OPTIONS.map(s => (
+                          <button key={s} onClick={() => handleStatusChange(issue.id, s)}
+                            className="text-xs px-2 py-1 rounded font-medium transition-all"
+                            style={{
+                              background: issue.status === s ? '#f97316' : '#334155',
+                              color: 'white'
+                            }}>
+                            {s.replace('_', ' ')}
                           </button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setChangingStatus(issue.id)}
-                          className="flex items-center gap-1 text-xs font-medium hover:underline"
-                          style={{ color: '#f97316' }}>
-                          <ChevronDown className="w-3 h-3" /> Update Status
+                        ))}
+                        <button onClick={() => setChangingStatus(null)} className="text-xs px-2 py-1 rounded text-slate-400" style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                          Cancel
                         </button>
-                      )}
+                      </div>
+                    ) : (
+                      <button onClick={() => setChangingStatus(issue.id)}
+                        className="flex items-center gap-1 text-xs font-medium hover:underline"
+                        style={{ color: '#f97316' }}>
+                        <ChevronDown className="w-3 h-3" /> Update Status
+                      </button>
+                    )}
+
+                    {/* Delete — sirf apni */}
+                    {issue.reporter_id === user?.id && (
                       <button onClick={() => handleDelete(issue.id)}
                         className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-medium">
                         <Trash2 className="w-3 h-3" /> Delete
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
+
                 </div>
 
                 {/* Upvote */}
