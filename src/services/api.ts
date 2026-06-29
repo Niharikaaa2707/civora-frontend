@@ -31,6 +31,7 @@ export const authApi = {
   login: (data: { email: string; password: string }) =>
     api.post('/auth/login', data),
   me: () => api.get('/auth/me'),
+  deleteAccount: () => api.delete('/auth/delete-account'),
 }
 
 export const issuesApi = {
