@@ -3,16 +3,19 @@ import { gamificationApi, issuesApi, authApi } from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import { StatusBadge, SeverityBadge, EmptyState } from '../components/common'
 import { timeAgo } from '../lib/utils'
-import { Zap } from 'lucide-react'
+import { Zap, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 export default function Profile() {
-  const { user, token, setAuth } = useAuthStore()
+  const { user, token, setAuth, logout } = useAuthStore()
+  const navigate = useNavigate()
   const [stats,       setStats]       = useState<any>(null)
   const [myIssues,    setMyIssues]    = useState<any[]>([])
   const [leaderboard, setLeaderboard] = useState<any[]>([])
   const [missions,    setMissions]    = useState<any[]>([])
   const [loading,     setLoading]     = useState(true)
+  const [deleting,    setDeleting]    = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -37,6 +40,22 @@ export default function Profile() {
     }
     load()
   }, [])
+
+  const handleDeleteAccount = async () => {
+    if (!confirm('Are you sure you want to delete your account? This action cannot be undone. All your complaints will also be deleted.')) return
+    if (!confirm('Final confirmation — Delete account permanently?')) return
+    setDeleting(true)
+    try {
+      await authApi.deleteAccount()
+      logout()
+      toast.success('Account deleted successfully!')
+      navigate('/')
+    } catch (err: any) {
+      toast.error('Failed to delete account')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   if (loading) return (
     <div className="flex justify-center py-16">
@@ -230,6 +249,29 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {/* Danger Zone — Delete Account */}
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #ef4444' }}>
+        <div className="px-5 py-3" style={{ background: 'rgba(239,68,68,0.1)', borderBottom: '1px solid #ef4444' }}>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-red-400">Danger Zone</h2>
+        </div>
+        <div className="p-5 flex items-center justify-between gap-4 flex-wrap" style={{ background: '#1e293b' }}>
+          <div>
+            <div className="font-semibold text-white text-sm">Delete Account</div>
+            <div className="text-slate-400 text-xs mt-0.5">Permanently delete your account and all your complaints. This cannot be undone.</div>
+          </div>
+          <button
+            onClick={handleDeleteAccount}
+            disabled={deleting}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
+            style={{ background: '#ef4444' }}
+          >
+            <Trash2 className="w-4 h-4" />
+            {deleting ? 'Deleting...' : 'Delete Account'}
+          </button>
+        </div>
+      </div>
+
     </div>
   )
 }
